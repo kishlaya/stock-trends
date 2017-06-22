@@ -1,0 +1,110 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-layout/app-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+<link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../bower_components/nebula-sidebar-layout/nebula-sidebar-layout.html">
+<link rel="import" href="../bower_components/paper-search/paper-search-panel.html">
+<link rel="import" href="app-sidebar.html">
+<link rel="import" href="app-content.html">
+<!-- <link rel="import" href="../bower_components/app-layout/"> -->
+
+<dom-module id="my-app">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+
+            app-header {
+                background-color: #00bcef;
+                color: #fff;
+                --app-header-background-rear-layer {
+                    background-color: red;
+                }
+            }
+
+            nebula-sidebar-layout {
+                width: 100%;
+                min-height: calc(100vh - 64px);
+                --nebula-sidebar-layout-backdrop-color: hsla(0, 0%, 0%, 0.6);;
+                --nebula-sidebar-layout-animation-duration: 250ms;
+            }
+
+            div[slot="sidebar"] {
+                width: 256px;
+                height: 100%;
+                background-color: #3e3e3e;
+                color: #fff;
+            }
+
+            div[slot="content"] {
+                height: 100%;
+                background-color: #eee;
+                color: #000;
+                padding: 6px 12px;
+            }
+
+            .user-details {
+                height: 100%;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-content: center;
+            }
+
+            .user-profile-pic {
+                width: 40px;
+                height: 40px;
+                margin: 12px 8px 0 0;
+                border-radius: 100%;
+                background: url('/src/images/profile.png') no-repeat;
+                background-size: cover;
+            }
+        </style>
+
+        <app-header-layout>
+
+            <app-header effects="waterfall" slot="header">
+                <app-toolbar>
+                    <p main-title="">Stock Trends</p>
+                        <!-- <paper-search-panel
+                            search="{{search}}"
+                            count="{{count}}"
+                            items="[[items]]"
+                            has-more="[[hasMore]]"
+                            loading="[[loading]]"
+                            filters="[[filters]]"
+                            selected-filters="{{selectedFilters}}"
+                            on-change-request-params="loadData">
+                            <div>
+                                Show your [[count]] results for "[[search]]"
+                            </div>
+                        </paper-search-panel> -->
+                    <div class="user-details">
+                        <div class="user-profile-pic"></div>                    
+                        <p class="user-name">Hi User</p>
+                    </div>
+                </app-toolbar>
+          </app-header>
+
+            <nebula-sidebar-layout id="nebulasidebar" breakpoint="(max-width: 960px)" collapsed="{{collapsed}}" opened="{{opened}}" on-changed="_onChanged">
+                <div slot="sidebar" id="sidebar">
+                    <app-sidebar></app-sidebar>
+                </div>
+
+                <div slot="content">
+                    <app-content></app-content>
+                </div>
+            </nebula-sidebar-layout>
+        </app-header-layout>
+    </template>
+
+    <script>
+        class MyApp extends Polymer.Element {
+            static get is() { return 'my-app'; }
+        }
+
+        window.customElements.define(MyApp.is, MyApp);
+    </script>
+</dom-module>

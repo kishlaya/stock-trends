@@ -1,0 +1,111 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../nebula-element-mixin/nebula-element-mixin.html">
+
+<!--
+The `<nebula-media-query>` custom element enables data binding to a media query.
+
+## Import
+
+```html
+<link rel="import" href="/bower_components/nebula-media-query/nebula-media-query.html"> 
+```
+
+## Usage
+
+Add the element, and provide a media query to define a breakpoint. When the breakpoint is triggered, the `matches` property will change.
+
+```html
+<nebula-media-query
+  query="(min-width: 600px)"
+  matches="{{matches}}">
+</nebula-media-query>
+```
+
+-->
+<script>
+(function() {
+  'use strict'
+
+  // symbols for private members
+  const mediaQueryList = Symbol()
+  const mediaQueryListener = Symbol()
+  const onQueryChanged = Symbol()
+  const onQueryMatches = Symbol()
+
+  // symbols for protected members
+  const observe = Symbol.for('Nebula.ElementMixin.observe')
+
+  class NebulaMediaQuery extends Nebula.ElementMixin(Polymer.Element) {
+
+    /**
+     * Returns the custom element definition name. 
+     * @protected
+     */
+    static get is() { return 'nebula-media-query' }
+
+    /**
+     * Gets property definitions used for Polymer data binding.
+     * @protected
+     */
+    static get properties() {
+      return {
+        query: {
+          type: String
+        },
+        matches: {
+          type: Boolean,
+          readOnly: true,
+          notify: true
+        }        
+      }
+    }
+
+    /**
+     * Creates a new instance of the custom element.
+     */
+    constructor() {
+      super()
+      this[observe]('query', this[onQueryChanged])
+    }
+
+    /**
+     * A Polymer element lifecycle event handler called when the element is iniitialized.
+     * @protected
+     */
+    ready() {
+      super.ready();
+      this.setAttribute('hidden', '')
+    }
+
+    /**
+     * An property observer triggered when the `query` property is changed.
+     * @param {string} query - The updated query property value.
+     * @private
+     */
+    [onQueryChanged](query) {
+      if (typeof query !== 'string') return
+
+      if (this[mediaQueryList]) {
+        this[mediaQueryList].removeListener(this[mediaQueryListener])
+      }
+
+      this[mediaQueryList] = matchMedia(query)
+      this[mediaQueryListener] = this[onQueryMatches].bind(this)
+      this[mediaQueryList].addListener(this[mediaQueryListener])
+
+      this._setMatches(this[mediaQueryList].matches)
+     }
+
+    /**
+     * An event handler triggered when the media query is matched.
+     * @param {MediaQueryListEvent} e - Information about the event.
+     * @private
+     */
+    [onQueryMatches](e) {
+      this._setMatches(this[mediaQueryList].matches)
+    }
+  }
+
+  customElements.define(NebulaMediaQuery.is, NebulaMediaQuery)
+}())
+</script>

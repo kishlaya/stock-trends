@@ -1,0 +1,326 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../nebula-element-mixin/nebula-element-mixin.html">
+<link rel="import" href="../nebula-media-query/nebula-media-query.html">
+
+<!--
+`<nebula-sidebar-layout>` is a web component to display a collapsable sidebar layout.
+
+The element will automatically fill the parent container. It provides two named slots, `sidebar` and `content` configured as a horizontal flexbox. Using the `breakpoint` property, a media query will be monitored that will set the element `collapsed` property. When `collapsed` is true, the `sidebar` slot is changed to an offscreen fixed position container. The sidebar can be displayed using the `opened` property, and will overlay the `content` slot as an animated drawer with a backdrop.
+
+# Import
+
+```sh
+$ bower install -S arsnebula/nebula-sidebar-layout
+```
+
+## Usage
+
+The element uses offscreen positioning for the sidebar when collapsed. It can only be used effectively if the parent container fills the entire browser window. The following is a typical base style to ensure that the HTML `body` element is sized to fit the browser screen height and width.
+
+```css
+html, body {
+  position: relative;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+```
+
+The element displays a two-column side-by-side layout with a fixed width sidebar on the left, and a fluid content container on the right. Content is inserted into each column using the `sidebar` and `content` named slots. The `breakpoint` property enables a media query that will set the element `collapsed` property. When `collapsed` is true, the `sidebar` slot is changed to an offscreen fixed position container. The sidebar can be displayed using the `opened` property, and will overlay the `content` slot as an animated drawer with a backdrop.
+
+```html
+<nebula-sidebar-layout
+  breakpoint="(max-width: 960px)"
+  collapsed="{{collapsed}}"
+  opened="{{opened}}"
+  on-opened-changed="_onOpenedChanged">
+  <div slot="sidebar"></div>
+  <div slot="content"></div>
+</nebula-sidebar-layout>
+```
+
+The sidebar container width is set to `fit-content`. To specify the width of the sidebar, set a fixed width on the sidebar slot content.
+
+```css
+<style>
+  nebula-sidebar-layout [slot=sidebar] {
+    width: 280px;
+  }
+</style>
+```
+
+The `breakpoint` property specifies the media query that determines when the sidebar is collapsed. The default value collapses the sidebar when the browser screen width is less than 960px. To manually control the collapse of the sidebar, set the `breakpoint` to empty, and then toggle the `collapsed` property value manually.
+
+```html
+<nebula-sidebar-layout breakpoint collapsed="{{collapsed}}">
+</nebula-sidebar-layout>
+```
+
+The element includes optional gesture support for opening and closing the sidebar by swiping left and right on touchscreen devices. Some mobile browsers use this gesture to switch browser tabs, so gesture support is disabled by default. To enable gesture support (such as for Cordova or Electron apps), set the `gesturesEnabled' property to `true`.
+
+```html
+<nebula-sidebar-layout gestures-enabled>
+</nebula-sidebar-layout>
+```
+
+## Styling
+
+The element can be styled using standard CSS properties and the following CSS variables:
+
+Custom property | Description | Default
+:--- | :--- | :---
+`--nebula-sidebar-layout-backdrop-color` | The color of the backdrop. | hsla(0, 0%, 0%, 0.6)
+`--nebula-sidebar-layout-animation-duration` | The duration of the slide out animation. | 250ms
+
+The element also inherits default values from the following global theme styles. If a global theme variable has not been set, it will use the local default.
+
+Custom property | Description
+:--- | :---
+`--nebula-ui-backdrop-color` | The background color of the backdrop pseudo element.
+
+-->
+<dom-module id="nebula-sidebar-layout">
+  <template>
+    <style>
+      @keyframes slideOut {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(0%); }
+      }
+      :host {
+        display: -webkit-flex;
+        display: flex;
+        -webkit-flex-direction: row;
+        flex-direction: row;
+        -webkit-flex: 1 1 auto;
+        flex: 1 1 auto;
+        position: relative;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+      #sidebar {
+        display: none;
+        cursor: default;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        overflow: hidden;
+        overflow-y: auto;
+        width: fit-content;
+      }
+      #content {
+        display: -webkit-flex;
+        display: flex;
+        -webkit-flex-direction: column;
+        flex-direction: column;
+        -webkit-flex: 1 1 auto;
+        flex: 1 1 auto;
+        cursor: default;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        overflow: hidden;
+        overflow-y: auto;
+      }
+      :host([opened]) #sidebar {
+        display: -webkit-flex;
+        display: flex;
+        -webkit-flex-direction: column;
+        flex-direction: column;
+        -webkit-flex: none; 
+        flex: 0 0 auto;
+      }
+      :host([collapsed]) #sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 9997;
+        transform: translateX(-100%);
+      }
+      :host([collapsed]) #content:after {
+        content: '';
+        pointer-events: none;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background-color: var(--nebula-sidebar-layout-backdrop-color, var(--nebula-ui-backdrop-color, hsla(0, 0%, 0%, 0.6)));
+        visibility: hidden;
+        opacity: 0;
+      }
+      :host([collapsed][opened]) #content {
+        cursor: pointer;
+      }
+      :host([collapsed][opened]) #content:after {
+        visibility: visible;
+        opacity: 1;
+        transition: opacity var(--nebula-sidebar-layout-animation-duration, 250ms) linear;
+      }
+      :host([collapsed][opened]) #sidebar {
+        animation: slideOut var(--nebula-sidebar-layout-animation-duration, 250ms) forwards;
+      }
+    </style>
+    <nebula-media-query query="[[breakpoint]]" matches="{{collapsed}}"></nebula-media-query>
+    <div id="sidebar">
+      <slot name="sidebar"></slot>
+    </div>
+    <div id="content">
+      <slot name="content"></slot>
+    </div>
+  </template>
+  <script>
+  (function() {
+    'use strict'
+
+    // symbols for private members
+    const onClick = Symbol()
+    const onKeydown = Symbol()
+    const onResize = Symbol()
+    const onOpenedChanged = Symbol()
+    const onCollapsedChanged = Symbol()
+
+    // symbols for protected members
+    const listen = Symbol.for('Nebula.ElementMixin.listen')
+    const unlisten = Symbol.for('Nebula.ElementMixin.unlisten')
+    const observe = Symbol.for('Nebula.ElementMixin.observe')
+
+    /**
+     * A responsive sidebar layout.
+     */
+    class NebulaSidebarLayout extends Nebula.ElementMixin(Polymer.Element) {
+
+      /**
+       * Gets the custom element name.
+       * @type {string}
+       */
+      static get is() { return 'nebula-sidebar-layout' }
+
+      /**
+       * Gets the property definitions for data binding.
+       * @type {Object}
+       * @property {boolean} opened - Indicates if the element is opened.
+       * @property {boolean} collapsed - Indicates if the element is collapsed.
+       * @property {string} breakpoint - The media query to monitor as the breakpoint for element collapse.
+       */
+      static get properties() {
+        return {
+          opened: {
+            type: Boolean,
+            notify: true,
+            reflectToAttribute: true,
+            value: false
+          },
+          collapsed: {
+            type: Boolean,
+            notify: true,
+            reflectToAttribute: true,
+            value: false
+          },
+          breakpoint: {
+            type: String,
+            value: '(max-width: 960px)'
+          }
+        }
+      }
+
+      /**
+       * Creates a new class.
+       * @constructor
+       */
+      constructor() {
+        super()
+        this[observe]('opened', this[onOpenedChanged])
+        this[observe]('collapsed', this[onCollapsedChanged])        
+      }
+
+      /**
+       * Lifecycle callback invoked when element has been initialized.
+       * @public
+       */
+      ready() {
+        super.ready()
+        this.setAttribute('role', 'dialog')
+      }
+
+      /**
+       * Event handler triggered when the element is clicked.
+       * @param {MouseEvent} e - Information about the event.
+       * @private
+       */
+      [onClick](e) {
+        if (this.opened) {
+          e.preventDefault()
+          this.set('opened', false)
+        }
+      }
+
+      /**
+       * Event handler triggered when the element is clicked.
+       * @param {KeyboardEvent} e - Information about the event.
+       * @private
+       */
+      [onKeydown](e) {
+        if (e.key.toLowerCase() === 'escape') {
+          e.preventDefault()
+          this.set('opened', false)
+        }
+      }
+
+      /**
+       * Event handler triggered when the element is clicked.
+       * @param {MouseEvent} e - Information about the event.
+       * @private
+       */
+      [onResize](e) {
+        this.set('opened', false)
+      }
+
+      /**
+       * Property observer triggered when the value of the `collapsed` property is changed.
+       * @param {boolean} collapsed - The current value of the property.
+       * @private
+       */
+      [onCollapsedChanged](collapsed) {
+        if (collapsed === void(0)) return
+        this.set('opened', !collapsed)
+      }
+
+      /**
+       * Property observer triggered when the value of the `opened` property is changed.
+       * @param {boolean} opened - The current value of the property.
+       * @private
+       */
+      [onOpenedChanged](opened) {
+        if (opened === void(0)) return
+        if (opened) {
+          if (this.collapsed) {
+            this[listen](window, 'resize', this[onResize])
+            this[listen](document.body, 'keydown', this[onKeydown])
+            this[listen](this, 'click', this[onClick])
+          }
+        } else {
+          this[unlisten](window, 'resize')
+          this[unlisten](document.body, 'keydown')
+          this[unlisten](this, 'click')
+        }
+      }
+    }
+
+    customElements.define(NebulaSidebarLayout.is, NebulaSidebarLayout)
+  }())
+  </script>
+</dom-module>

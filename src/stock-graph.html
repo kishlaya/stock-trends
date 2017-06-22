@@ -1,0 +1,178 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="https://code.highcharts.com/stock/highstock.js"></script>
+
+<dom-module id="stock-graph">
+	<template>
+		<style>
+			* {
+				-webkit-box-sizing: border-box;
+				-moz-box-sizing: border-box;
+				box-sizing: border-box;
+			}
+
+			#stocksearch {
+				margin: 0;
+				padding: 0;
+			}
+
+			#stockname {
+				width: 100%;
+				padding: 10px;
+			}
+
+			#suggestions {
+				margin: 0;
+				padding: 0;
+				list-style-type: none;
+				width: 100%;
+				-webkit-transition: all 400ms;
+				-moz-transition: all 400ms;
+				transition: all 400ms;
+			}
+
+			li {
+				display: block;
+				width: 100%;
+				border-bottom: solid 1px #6e6e6e;
+				padding: 10px;
+				-webkit-transition: all 400ms;
+				-moz-transition: all 400ms;
+				transition: all 400ms;
+			}
+
+			li:hover {
+				background-color: #00bcef;
+				color: #fff;
+			}
+
+			li span.code {
+				display: none;
+			}
+		</style>
+
+		<form action="" id="stocksearch">
+			<input type="text" name="code" id="stockname" placeholder="Stock Name" autocomplete="off" autofocus="">
+		</form>
+		<ul id="suggestions"></ul>
+		<div id="graph" style="height: 400px; min-width: 310px"></div>
+	</template>
+
+	<script>
+		var container, stockNameInputBox, suggestionBox;
+		class StockGraph extends Polymer.Element {
+			static get is() { return 'stock-graph'; }
+		}
+
+		Polymer({
+			is: 'stock-graph',
+
+			ready: function() {
+				var data;
+
+				$.ajax({
+					url: "XNSE-datasets-codes.csv",
+					success: function(result) {
+						data = result;
+						data = data.split(/\r\n|\n/);
+					}
+				});
+
+				stockNameInputBox = $(this.$.stockname);
+				suggestionBox = $(this.$.suggestions);
+				container = this.$.graph;
+
+				$(this.$.stocksearch).submit(function() {
+					if(suggestionBox.children().length == 0) {
+						alert("No matching results");
+						return false;
+					}
+					stockName = $(suggestionBox.children()[0]).children('.name').html();
+					stockCode = $(suggestionBox.children()[0]).children('.code').html();
+					//alert(stockName + " --> " + stockCode);
+					plotGraph(stockCode);
+					reset(stockName);
+					return false;
+				});
+
+				stockNameInputBox.keyup(function() {
+					results = search(stockNameInputBox.val(), data);
+					suggestionBox.html('');
+					for(x=0;x<results.length;x++) {
+						query = results[x].split(',');
+						suggestionBox.append("<li onclick='loadData(this)'>" + "<span class='code'>" + query[0] + "</span><span class='name'>" + query[1] + "</span></li>");
+					}
+				});
+			}
+		});
+
+		function loadData(obj) {
+			reset($(obj).children('.name').html());
+			plotGraph($(obj).children('.code').html());
+		}
+
+		function search(query, data) {
+			if(query == "")
+				return "";
+
+			var matches = [],
+				limit = 6;
+			for(x=0;x<data.length;x++) {
+				if(data[x].toLowerCase().indexOf(query.toLowerCase()) != -1) {
+					matches.push(data[x]);
+					if(matches.length == limit)
+						break;
+				}
+			}
+			return matches;
+		}
+
+		function plotGraph(code) {
+			var url = "https://www.quandl.com/api/v3/datasets/";
+			url = url + code;
+			url = url + ".json?api_key=TL8m4Jg4nzNctc6DQ8Se&order=asc&column_index=4";
+			// url = url + "&start_date=2010-01-05&end_date=2011-12-29";
+			$.getJSON(url, function(data) {
+				if(data === "null") {
+					this.textContent = "No records found for the specified date range";
+					return;
+				}
+				myNewData = [];
+				myData = data.dataset.data;
+				myData.forEach(function(record) {
+					myDate = record[0];
+					myDate = myDate.split("-");
+					myNewDate = myDate[1] + "/" + myDate[2] + "/" + myDate[0];
+					myNewData.push([new Date(myNewDate).getTime(), record[1]]);
+				});
+
+				Highcharts.stockChart({
+					chart: {
+						renderTo: container
+					},
+
+					rangeSelector: {
+						selected: 1
+					},
+
+					title: {
+						text: 'Stock Trends'
+					},
+
+					series: [{
+						name: 'XNSE',
+						data: myNewData,
+						tooltip: {
+							valueDecimals: 2
+						}
+					}]
+				});
+			});
+		}
+
+		function reset(stockName) {
+			stockNameInputBox.val(stockName);
+			suggestionBox.html('');
+		}
+	</script>
+</dom-module>

@@ -1,0 +1,544 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="https://code.highcharts.com/stock/highstock.js"></script>
+
+<dom-module id="app-content">
+    <template>
+        <style>
+            :host {
+                display: block;
+                -webkit-box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                box-sizing: border-box;
+            }
+
+            * {
+                -webkit-box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                box-sizing: border-box;
+            }
+
+            p {
+                margin: 0;
+                -webkit-margin-before: 0;
+                -webkit-margin-after: 0;
+            }
+
+            .title {
+                display: flex;
+                align-items: center;
+                padding: 12px;
+            }
+
+            .title .stock-name {
+                font-size: 24px;
+            }
+
+            .card-area {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .card-slot {
+                width: 100%;
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-around;
+            }
+
+            .card {
+                width: 100%;
+                margin: 12px;
+            }
+
+            .card-title {
+                margin: 6px 0 6px 16px;
+            }
+
+            .card-content {
+                width: 100%;
+                min-height: 180px;
+                max-height: 600px;
+                overflow: auto;
+                padding: 24px 16px;
+                background-color: #fff;
+                overflow-x: auto;
+                -webkit-box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                box-sizing: border-box;
+            }
+
+            .profit {
+                color: #00bc00;
+            }
+
+            .loss {
+                color: #bc0000;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            // STOCKS
+
+            #stocksearch {
+                margin: 0;
+                padding: 0;
+            }
+
+            #stocknameinput {
+                width: 250px;
+                padding: 10px;
+                background-color: transparent;
+                border: none;
+                outline: none;
+                border-bottom: solid 1px #00bcef;
+                -webkit-transition: all 800ms;
+                -moz-transition: all 800ms;
+                transition: all 800ms;
+            }
+
+            #stocknameinput:focus {
+                width: 100%;
+                background-color: #fff;
+                border: solid 1px #00bcef;
+            }
+
+            #suggestions {
+                position: absolute;
+                width: calc(100% - 280px);
+                background-color: #fff;
+                margin: 0;
+                padding: 0;
+                list-style-type: none;
+                -webkit-transition: all 400ms;
+                -moz-transition: all 400ms;
+                transition: all 400ms;
+                z-index: 999;
+            }
+
+            #suggestions li {
+                display: block;
+                width: 100%;
+                padding: 10px;
+                border-bottom: solid 1px #6e6e6e;
+                -webkit-transition: all 400ms;
+                -moz-transition: all 400ms;
+                transition: all 400ms;
+            }
+
+            #suggestions li:hover {
+                background-color: #00bcef;
+                color: #fff;
+            }
+
+            #suggestions span.code {
+                display: none;
+            }
+
+            // RECENTS
+
+            #recentstocks tr {
+                display: table-row;
+                cursor: pointer;
+            }
+
+            #recentstocks tr:hover {
+                background-color: #ccc;
+                cursor: pointer;
+            }
+        </style>
+        
+        <form action="" id="stocksearch">
+            <input type="text" name="code" id="stocknameinput" placeholder="Search stock" autocomplete="off">
+        </form>
+        <ul id="suggestions"></ul>
+
+        <div class="title">
+            <p class="stock-name" id="stockname">Stock Name</p>
+        </div>
+        <div class="card-area">
+            <div class="card-slot">
+
+                <div class="card" style="width: 35%;">
+                    <p class="card-title">NSE Value</p>
+                    <div class="card-content">
+                        <table>
+                            <tbody><tr style="vertical-align: bottom;">
+                                <td width="10%" id="changeIndicator"><paper-icon-button icon="star"></paper-icon-button></td>
+                                <td width="60%" style="color: #00bcef; font-size: 250%;" id="closingPrice">Closing</td>
+                                <td width="30%" style="font-size: 75%;">Some other info</td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td style="color: #00bcef;" id="changeValue">Change</td>
+                                <td></td>
+                            </tr>
+                        </tbody></table>
+                    </div>
+                </div>
+
+                <div class="card" style="width: 65%;">
+                    <p class="card-title">Share Value</p>
+                    <div class="card-content" style="font-size: 80%;">
+                        <table>
+                            <tbody><tr>
+                                <td width="20%"><strong>Range</strong></td>
+                                <td width="35%">2,552.50 - 2,591.85</td>
+                                <td width="20%"><strong>Div/yeild</strong></td>
+                                <td width="25%">27.501/1.84</td>
+                            </tr>
+                            <tr>
+                                <td><strong>S2 Week</strong></td>
+                                <td>2,051.90 - 2,744.80</td>
+                                <td><strong>EPS</strong></td>
+                                <td>133.42</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Open</strong></td>
+                                <td>2356.25</td>
+                                <td><strong>Shares</strong></td>
+                                <td>1.97B</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Vol.</strong></td>
+                                <td>677,824.00</td>
+                                <td><strong>Beta</strong></td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Mkt. cap</strong></td>
+                                <td>5.06T</td>
+                                <td><strong>Inst. own</strong></td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td><strong>P/E</strong></td>
+                                <td>19.19</td>
+                            </tr>
+                        </tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-slot">
+                <div class="card" style="width: 65%;">
+                    <p class="card-title">NSE Trend</p>
+                    <div class="card-content">
+                        <div id="graph"></div>
+                    </div>
+                </div>
+
+                <div class="card" style="width: 35%;">
+                    <p class="card-title">Compare</p>
+                    <div class="card-content">
+                        <p>Recent Quotes</p>
+                        <table style="font-size: 80%" id="recentstocks"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        var container;
+        var stockNameInputBox, suggestionBox, recentStocksBox;
+        var stocknameBox, closingPriceBox, changeValueBox, changeIndicatorBox;
+        var seriesOptions = [], mainStockChart;
+
+        Polymer({
+            is: 'app-content',
+
+            ready: function() {
+                var data;
+
+                $.ajax({
+                    url: "src/codes/XNSE-datasets-codes.csv",
+                    success: function(result) {
+                        data = result;
+                        data = data.split(/\r\n|\n/);
+                    }
+                });
+
+                stockNameInputBox = $(this.$.stocknameinput);
+                suggestionBox = $(this.$.suggestions);
+                recentStocksBox = $(this.$.recentstocks);
+                container = this.$.graph;
+
+                // Stock Details Objects
+                stocknameBox = $(this.$.stockname);
+                closingPriceBox = $(this.$.closingPrice);
+                changeValueBox = $(this.$.changeValue);
+                changeIndicatorBox = $(this.$.changeIndicator);
+
+                $(this.$.stocksearch).submit(function() {
+                    if(suggestionBox.children().length == 0) {
+                        alert("No matching results");
+                        return false;
+                    }
+                    loadData($(suggestionBox.children()[0]));
+                    return false;
+                });
+
+                stockNameInputBox.keyup(function(event) {
+                    if((event.keyCode<65||event.keyCode>90)&&(event.keyCode<96||event.keyCode>105)&&(event.keyCode != 8))
+                        // If non-aplhanumeric key (excluding backspace) is pressed do not trigger the event
+                        return;
+
+                    results = search(stockNameInputBox.val(), data);
+                    suggestionBox.html('');
+                    for(x=0;x<results.length;x++) {
+                        query = results[x].split(',');
+                        suggestionBox.append("<li onclick='loadData(this)'>" + "<span class='code'>" + query[0] + "</span><span class='name'>" + query[1] + "</span></li>");
+                        suggestionBox.css({
+                            'border-bottom': 'solid 1px #6e6e6e',
+                            'border-left': 'solid 1px #6e6e6e',
+                            'border-right': 'solid 1px #6e6e6e'
+                        });
+                    }
+                    return false;
+                });
+            }
+        });
+
+        function loadData(obj) {
+            stockName = $(obj).children('.name').html();
+            reset(stockName);
+            stockName = stockName.substring(0, stockName.indexOf('(')-1);
+            stockCode = $(obj).children('.code').html();
+            stockCode = stockCode.substring(stockCode.indexOf('/')+1);
+            plotGraph($(obj).children('.code').html(), false);
+            stocknameBox.html(stockName + " (NSE: " + stockCode + ")");
+        }
+
+        function search(query, data) {
+            if(query == "")
+                return "";
+
+            var matches = [],
+                limit = 6;
+            for(x=0;x<data.length;x++) {
+                if(data[x].toLowerCase().indexOf(query.toLowerCase()) != -1) {
+                    matches.push(data[x]);
+                    if(matches.length == limit)
+                        break;
+                }
+            }
+            return matches;
+        }
+
+        function plotGraph(code, append) {
+            var url = "https://www.quandl.com/api/v3/datasets/";
+            url = url + code;
+            url = url + ".json?api_key=TL8m4Jg4nzNctc6DQ8Se&order=asc&column_index=4";
+
+            code = code.substring(code.indexOf('/')+1);
+
+            $.getJSON(url, function(data) {
+                if(data === "null" || data == []) {
+                    alert("No records found");
+                    return;
+                }
+
+                var myData = data.dataset.data;
+                var plotData = [];
+                myData.forEach(function(record) {
+                    myDate = record[0];
+                    myDate = myDate.split("-");
+                    myNewDate = myDate[1] + "/" + myDate[2] + "/" + myDate[0];
+                    plotData.push([new Date(myNewDate).getTime(), record[1]]);
+                });
+
+                var change = null, cprice = null;
+                var l = plotData.length;
+                if(l>=2) {
+                    change = plotData[l-1][1] - plotData[l-2][1];
+                    change = round(change, 2).toFixed(2);
+                }
+                if(l>=1) {
+                    cprice = plotData[l-1][1];
+                    cprice = round(cprice, 2).toFixed(2);
+                }
+                closingPriceBox.html(cprice);
+                changeValueBox.html(change);
+                if(change>=0) {
+                    changeIndicatorBox.removeClass('loss');
+                    changeIndicatorBox.addClass('profit');
+                }
+                else {
+                    changeIndicatorBox.removeClass('profit');
+                    changeIndicatorBox.addClass('loss');
+                }
+
+                // Plot the graph
+                if(append) {
+                    seriesOptions.push({
+                        name: code,
+                        data: plotData
+                    });
+                }
+                else {
+                    // Uncheck all other stocks before adding to recents
+                    var checkboxes = recentStocksBox.children().children().children().children('input');
+                    $.each(checkboxes, function(x, checkbox) {
+                        $(checkbox).removeAttr('checked');
+                    });
+
+                    // Add to recents
+                    recentStocksBox.append("<tr onclick='displayData(this)'><td width='15%'><input type='checkbox' onclick='hasChanged(this)' checked></td><td width='30%'>" + code + "</td><td width='40%'><span class='cprice'>" + cprice + "</span><br><span class='change'>" + change + "</span></td><td width='15%'><a href='#' onclick='deleteRecentStock(this)'>Del</a></td></tr>");
+
+                    seriesOptions = [{
+                        name: code,
+                        data: plotData
+                    }];
+                }
+
+                mainStockChart = Highcharts.stockChart({
+                    chart: {
+                        renderTo: container
+                    },
+
+                    rangeSelector: {
+                        selected: 1
+                    },
+
+                    title: {
+                        text: 'Stock Trends'
+                    },
+
+                    tooltip: {
+                        pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b> ({point.change}%)<br/>',
+                        valueDecimals: 2,
+                        split: true
+                    },
+
+                    series: seriesOptions
+                });
+            });
+        }
+
+        function displayData(obj) {
+            var x = $(obj).children();
+            stocknameBox.html($(x[1]).html());
+            closingPriceBox.html($(x[2]).children('.cprice').html());
+            change = $(x[2]).children('.change').html();
+            changeValueBox.html(change);
+            if(change>=0) {
+                changeIndicatorBox.removeClass('loss');
+                changeIndicatorBox.addClass('profit');
+            }
+            else {
+                changeIndicatorBox.removeClass('profit');
+                changeIndicatorBox.addClass('loss');
+            }
+        }
+
+        function hasChanged(obj) {
+            var x = $(obj).parent().parent('tr').children();
+            var stockCode = $(x[1]).html();
+
+            var checkboxes = recentStocksBox.children().children().children().children('input').toArray();
+            var nCheckboxes = 0;
+
+            if(!obj.checked) {
+                checkboxes.forEach(function(checkbox) {
+                    if($(checkbox).attr('checked') === "checked") {
+                        nCheckboxes+=1;
+                    }
+                });
+
+                if(nCheckboxes == 0) {
+                    obj.checked = true;
+                    return;
+                }
+
+                var index;
+                for(i=0;i<seriesOptions.length;i++) {
+                    if(seriesOptions[i].name == stockCode) {
+                        index = i;
+                        break;
+                    }
+                }
+                seriesOptions.splice(index, 1);
+                mainStockChart = Highcharts.stockChart({
+                    chart: {
+                        renderTo: container
+                    },
+
+                    series: seriesOptions
+                });
+            }
+
+            else {
+                checkboxes.forEach(function(checkbox) {
+                    if($(checkbox).attr('checked') === "checked") {
+                        nCheckboxes+=1;
+                    }
+                });
+
+                if(nCheckboxes==5) {
+                    obj.checked = false;
+                    return;
+                }
+
+                plotGraph("XNSE/" + stockCode, true);
+            }
+        }
+
+        function round(value, exp) {
+            // Function to round decimal values
+            if (typeof exp === 'undefined' || +exp === 0)
+            return Math.round(value);
+
+            value = +value;
+            exp = +exp;
+
+            if (isNaN(value) || !(typeof exp === 'number' && exp % 1 === 0))
+            return NaN;
+
+            // Shift
+            value = value.toString().split('e');
+            value = Math.round(+(value[0] + 'e' + (value[1] ? (+value[1] + exp) : exp)));
+
+            // Shift back
+            value = value.toString().split('e');
+            return +(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -exp));
+        }
+
+        function deleteRecentStock(obj) {
+            var x = $(obj).parent('td').parent('tr').children();
+
+            // alert($(x.children()).attr('checked'));
+            var y = x.children();
+
+            if($(y[0]).attr('checked') == "checked") {
+                var checkboxes = recentStocksBox.children().children().children().children('input').toArray();
+                var nCheckboxes = 0;
+
+                checkboxes.forEach(function(checkbox) {
+                    if($(checkbox).attr('checked') === "checked") {
+                        nCheckboxes+=1;
+                    }
+                });
+
+                if(nCheckboxes == 1) {
+                    return;
+                }
+            }
+            $(obj).parent().parent().remove();
+        }
+
+        function reset(stockName) {
+            stockNameInputBox.val(stockName);
+            suggestionBox.html('');
+            suggestionBox.css({
+                'border': 'none'
+            });
+        }
+    </script>
+</dom-module>
